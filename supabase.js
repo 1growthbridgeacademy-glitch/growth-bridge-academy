@@ -4,7 +4,7 @@
 // ==========================================
 
 // 1. Paste your Supabase Project URL here.
-const SUPABASE_URL = "giomhrelsspflvjoqmvp";
+const SUPABASE_URL = "https://giomhrelsspflvjoqmvp.supabase.co";
 
 // 2. Paste your Supabase Publishable key here.
 const SUPABASE_ANON_KEY = "sb_publishable_arF6ZUeuebSiYXlu0pSNKA_VNRi5_h7";
