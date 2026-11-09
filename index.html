@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#100d35">
+  <title>Growth Bridge RPG Academy</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-card">
+      <div class="crest">✦</div>
+      <p class="eyebrow">WELCOME TO</p>
+      <h1>GROWTH BRIDGE<br><span>RPG ACADEMY</span></h1>
+      <p class="loading-copy">Your learning adventure begins here.</p>
+      <div class="loading-track"><span></span></div>
+      <small>Preparing your academy…</small>
+    </div>
+  </div>
+
+  <section id="authScreen" class="auth-screen hidden">
+    <div class="auth-art"></div>
+    <form id="registerForm" class="auth-card">
+      <p class="eyebrow">CREATE YOUR STUDENT PROFILE</p>
+      <h1>Join the Academy</h1>
+      <div class="form-grid">
+        <label>Email ID<input name="email" type="email" placeholder="you@example.com" required></label>
+        <label>Username<input name="username" placeholder="Your academy username" required maxlength="24"></label>
+        <label>Class<input name="className" placeholder="e.g. Class 10" required></label>
+        <label>Syllabus<input name="syllabus" placeholder="Write your syllabus" required></label>
+        <label>School name<input name="school" placeholder="Your school name" required></label>
+        <label>Gender<select name="gender" required><option value="">Choose</option><option>Male</option><option>Female</option></select></label>
+        <label class="wide">Subjects you study<textarea name="subjects" placeholder="Write your subjects…" required></textarea></label>
+        <label class="wide">Working-day schedule<textarea name="workingSchedule" placeholder="Write your working-day schedule…" required></textarea></label>
+        <label class="wide">Holiday schedule<textarea name="holidaySchedule" placeholder="Write your holiday schedule…" required></textarea></label>
+      </div>
+      <button class="primary" type="submit">Enter the Academy</button>
+      <p class="muted tiny">Demo mode: this profile is saved only in this browser.</p>
+    </form>
+  </section>
+
+  <div id="app" class="app hidden">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">✦</div>
+        <div><b>GROWTH BRIDGE</b><small>RPG ACADEMY</small></div>
+      </div>
+      <div class="top-actions">
+        <span class="currency">🪙 <b id="coinCount">0</b></span>
+        <span class="currency">💎 <b id="xpCount">0</b> XP</span>
+        <span class="currency">🌟 <b id="gpCount">0</b> GP</span>
+        <button class="avatar-button" id="profileButton" title="Profile">A</button>
+      </div>
+    </header>
+
+    <div class="shell">
+      <aside class="sidebar">
+        <nav id="navigation">
+          <button data-page="lobby" class="nav-item active">▦ <span>Lobby</span></button>
+          <button data-page="missions" class="nav-item">⚔ <span>Missions &amp; Checklist</span></button>
+          <button data-page="completed" class="nav-item">✓ <span>Completed &amp; Remaining</span></button>
+          <button data-page="progress" class="nav-item">▥ <span>Progress <small>(Daily &amp; Weekly)</small></span></button>
+          <button data-page="community" class="nav-item">♟ <span>Community &amp; Friends</span></button>
+          <button data-page="teammates" class="nav-item">♜ <span>Teammates</span></button>
+          <button data-page="chat" class="nav-item">● <span>Community Chat</span></button>
+          <button data-page="achievements" class="nav-item">🏆 <span>Achievements</span></button>
+          <button data-page="rewards" class="nav-item">🎁 <span>Rewards</span></button>
+          <button data-page="settings" class="nav-item">⚙ <span>Settings</span></button>
+        </nav>
+      </aside>
+      <main id="mainContent" class="main-content"></main>
+    </div>
+    <footer class="footer">✦ Learn • Play • Grow Together ✦</footer>
+  </div>
+
+  <input id="photoPicker" type="file" accept="image/*" capture="environment" hidden>
+  <input id="filesPicker" type="file" hidden>
+
+  <!-- Supabase JavaScript library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Your Supabase connection settings -->
+  <script src="supabase.js"></script>
+
+  <!-- Main website functionality -->
+  <script src="script.js"></script>
+</body>
+</html>
