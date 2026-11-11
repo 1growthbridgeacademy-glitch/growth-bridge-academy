@@ -1,5 +1,5 @@
-const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
-const SUPABASE_PUBLISHABLE_KEY = "YOUR_SUPABASE_PUBLISHABLE_KEY";
+const SUPABASE_URL = "https://ybahrdhjqqqadusnqbck.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_cAANCwmZAmQgUGdNIZN_6Q_CA9tBsqa";
 
 if (
   window.supabase &&
