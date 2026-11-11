@@ -3,335 +3,188 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#101827">
   <title>Growth Bridge RPG Academy</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <script src="script.js" defer></script>
 </head>
 <body>
 
-  <!-- LOGIN AND REGISTRATION -->
-  <section id="authScreen" class="auth-screen">
+  <div id="authScreen" class="auth-screen">
     <div class="auth-card">
-      <div class="logo-mark">GB</div>
+      <div class="logo">GB</div>
       <h1>Growth Bridge</h1>
-      <p class="muted">Your learning journey starts here.</p>
+      <p>RPG Academy</p>
 
-      <div class="auth-tabs">
-        <button id="loginTab" class="active">Login</button>
-        <button id="registerTab">Register</button>
-      </div>
-
-      <form id="authForm">
-        <div id="registerFields" class="hidden">
-          <label>Username</label>
-          <input id="username" type="text" placeholder="Your username">
-
-          <label>Class</label>
-          <input id="className" type="text" placeholder="Example: Class 10">
-
-          <label>School name</label>
-          <input id="schoolName" type="text" placeholder="Your school">
-
-          <label>Syllabus</label>
-          <input id="syllabus" type="text" placeholder="Example: Kerala State">
-
-          <label>Subjects</label>
-          <textarea id="subjects" placeholder="Write your subjects"></textarea>
-
-          <label>Gender</label>
-          <select id="gender">
-            <option value="">Choose</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
-        </div>
-
-        <label>Email</label>
-        <input id="email" type="email" required placeholder="Your email">
-
-        <label>Password</label>
-        <input id="password" type="password" required placeholder="Your password">
-
-        <button id="authSubmit" class="primary-btn" type="submit">Login</button>
-        <p id="authMessage" class="message"></p>
+      <form id="loginForm">
+        <input id="email" type="email" placeholder="Email address" required>
+        <input id="password" type="password" placeholder="Password" required>
+        <button type="submit">Sign in</button>
       </form>
+
+      <p class="auth-switch">
+        New student?
+        <button id="showRegister" class="text-button" type="button">Create account</button>
+      </p>
+
+      <form id="registerForm" class="hidden">
+        <input id="regEmail" type="email" placeholder="Email address" required>
+        <input id="regPassword" type="password" placeholder="Password" required>
+        <input id="username" type="text" placeholder="Username" required>
+        <input id="school" type="text" placeholder="School name" required>
+        <input id="className" type="text" placeholder="Class / Grade" required>
+        <input id="syllabus" type="text" placeholder="Syllabus" required>
+        <input id="subjects" type="text" placeholder="Subjects (comma separated)" required>
+        <button type="submit">Create account</button>
+        <button id="backToLogin" class="text-button" type="button">Back to sign in</button>
+      </form>
+
+      <p id="authMessage" class="message"></p>
     </div>
-  </section>
+  </div>
 
-  <!-- MAIN APPLICATION -->
   <div id="app" class="app hidden">
+    <header class="topbar">
+      <button id="menuButton" class="menu-button" aria-label="Open menu">☰</button>
+      <div class="brand"><span class="small-logo">GB</span> Growth Bridge RPG Academy</div>
+      <div id="userDisplay">Student</div>
+    </header>
 
-    <!-- MOBILE OVERLAY -->
-    <div id="overlay" class="overlay"></div>
+    <div id="drawerOverlay" class="drawer-overlay"></div>
 
-    <!-- SIDEBAR -->
     <aside id="sidebar" class="sidebar">
-      <div class="brand">
-        <div class="logo-mark small">GB</div>
-        <div>
-          <strong>Growth Bridge</strong>
-          <span>RPG Academy</span>
-        </div>
-      </div>
-
-      <div class="nav-heading">MENU</div>
-
-      <nav class="navigation">
-        <button class="nav-item active" data-page="lobby">
-          <span>⌂</span> Lobby
-        </button>
-        <button class="nav-item" data-page="missions">
-          <span>☑</span> Missions & Checklist
-        </button>
-        <button class="nav-item" data-page="completed">
-          <span>✓</span> Completed & Remaining
-        </button>
-        <button class="nav-item" data-page="progress">
-          <span>▥</span> Progress (Daily & Weekly)
-        </button>
-        <button class="nav-item" data-page="community">
-          <span>♧</span> Community & Friends
-        </button>
-        <button class="nav-item" data-page="teammates">
-          <span>♙</span> Teammates
-        </button>
-        <button class="nav-item" data-page="chat">
-          <span>▤</span> Community Chat
-        </button>
-        <button class="nav-item" data-page="achievements">
-          <span>🏆</span> Achievements
-        </button>
-        <button class="nav-item" data-page="rewards">
-          <span>◇</span> Rewards
-        </button>
-        <button class="nav-item" data-page="settings">
-          <span>⚙</span> Settings
-        </button>
-      </nav>
-
-      <div class="sidebar-bottom">
-        <div class="user-mini">
-          <div class="avatar" id="userInitial">S</div>
-          <div>
-            <strong id="sidebarUsername">Student</strong>
-            <span>Student account</span>
-          </div>
-        </div>
-        <button id="logoutButton" class="logout-btn">↪ Log out</button>
-      </div>
+      <div class="sidebar-heading">MENU</div>
+      <button class="nav-link active" data-page="lobby">▦ Lobby</button>
+      <button class="nav-link" data-page="missions">✓ Missions & Checklist</button>
+      <button class="nav-link" data-page="completed">☑ Completed & Remaining</button>
+      <button class="nav-link" data-page="progress">▥ Progress</button>
+      <button class="nav-link" data-page="community">◎ Community & Friends</button>
+      <button class="nav-link" data-page="teammates">♧ Teammates</button>
+      <button class="nav-link" data-page="chat">▤ Community Chat</button>
+      <button class="nav-link" data-page="achievements">★ Achievements</button>
+      <button class="nav-link" data-page="rewards">◇ Rewards</button>
+      <button class="nav-link" data-page="settings">⚙ Settings</button>
+      <button id="logoutButton" class="nav-link logout">↪ Sign out</button>
     </aside>
 
-    <!-- MAIN AREA -->
-    <main class="main-area">
-      <header class="topbar">
-        <button id="menuButton" class="menu-button" aria-label="Open menu">☰</button>
-        <div class="topbar-title">
-          <strong id="topTitle">Lobby</strong>
-          <span>Your personal learning space</span>
+    <main class="main-content">
+
+      <section id="lobby" class="page active-page">
+        <h1>Welcome to your Lobby</h1>
+        <p class="muted">Build good habits, complete missions and track your progress.</p>
+        <div class="stats-grid">
+          <div class="stat-card"><span>Today's GP</span><strong id="todayGP">0</strong></div>
+          <div class="stat-card"><span>Total XP</span><strong id="totalXP">0</strong></div>
+          <div class="stat-card"><span>Coins</span><strong id="totalCoins">0</strong></div>
+          <div class="stat-card"><span>GB Points</span><strong id="totalGB">0</strong></div>
         </div>
-        <div class="topbar-user" id="topUsername">Student</div>
-      </header>
+        <div class="panel">
+          <h2>Today's Missions</h2>
+          <div id="lobbyMissions"></div>
+        </div>
+      </section>
 
-      <div class="page-content">
+      <section id="missions" class="page">
+        <h1>Missions & Checklist</h1>
+        <p class="muted">Add your personal study missions and mark them complete.</p>
+        <form id="missionForm" class="inline-form">
+          <input id="missionTitle" type="text" placeholder="Enter a mission" required>
+          <input id="missionGP" type="number" min="0" max="100" value="10" required>
+          <button type="submit">Add mission</button>
+        </form>
+        <div id="missionList" class="panel"></div>
+      </section>
 
-        <!-- LOBBY -->
-        <section id="page-lobby" class="page active">
-          <div class="welcome">
-            <div>
-              <p class="eyebrow">YOUR ACADEMY</p>
-              <h1>Welcome back, <span id="welcomeName">Student</span>!</h1>
-              <p>Keep learning. Keep improving. Every step counts.</p>
-            </div>
-          </div>
+      <section id="completed" class="page">
+        <h1>Completed & Remaining</h1>
+        <div class="two-columns">
+          <div class="panel"><h2>Completed</h2><div id="completedList"></div></div>
+          <div class="panel"><h2>Remaining</h2><div id="remainingList"></div></div>
+        </div>
+      </section>
 
-          <div class="stats-grid">
-            <article class="stat-card">
-              <span>Growth Points</span>
-              <strong id="gpValue">0</strong>
-              <small>Today's GP</small>
-            </article>
-            <article class="stat-card">
-              <span>Experience</span>
-              <strong id="xpValue">0</strong>
-              <small>Total XP</small>
-            </article>
-            <article class="stat-card">
-              <span>Coins</span>
-              <strong id="coinValue">0</strong>
-              <small>Your balance</small>
-            </article>
-            <article class="stat-card">
-              <span>GB Points</span>
-              <strong id="gbValue">0</strong>
-              <small>Your balance</small>
-            </article>
-          </div>
+      <section id="progress" class="page">
+        <h1>Progress</h1>
+        <div class="panel">
+          <h2>Daily Progress</h2>
+          <p id="dailyProgressText">0 GP earned today</p>
+          <div class="progress-track"><div id="dailyProgressBar" class="progress-fill"></div></div>
+        </div>
+        <div class="panel">
+          <h2>Weekly Progress</h2>
+          <p id="weeklyProgressText">Your weekly progress will appear here.</p>
+        </div>
+      </section>
 
-          <div class="content-grid">
-            <article class="panel">
-              <div class="panel-heading">
-                <h2>Today's Overview</h2>
-                <span class="status-pill">Study day</span>
-              </div>
-              <p>Complete your planned study activities and record your progress.</p>
-              <button class="primary-btn" data-go="missions">View Missions</button>
-            </article>
+      <section id="community" class="page">
+        <h1>Community & Friends</h1>
+        <div class="panel">
+          <h2>Friends</h2>
+          <p>Friends and approved community features will appear here after database integration.</p>
+        </div>
+        <div class="panel">
+          <h2>Weekly Leaderboard</h2>
+          <div id="weeklyLeaderboard">Leaderboard requires shared database integration.</div>
+        </div>
+        <div class="panel">
+          <h2>Monthly Leaderboard</h2>
+          <div id="monthlyLeaderboard">Leaderboard requires shared database integration.</div>
+        </div>
+      </section>
 
-            <article class="panel">
-              <h2>Daily Goal</h2>
-              <div class="progress-track">
-                <div id="dailyProgressBar" class="progress-fill"></div>
-              </div>
-              <p id="dailyProgressText">0 / 100 GP completed</p>
-            </article>
-          </div>
-        </section>
+      <section id="teammates" class="page">
+        <h1>Teammates</h1>
+        <div class="panel">
+          <h2>Your Team</h2>
+          <p>Teacher-approved team pairing will appear here after teacher accounts are configured.</p>
+        </div>
+      </section>
 
-        <!-- MISSIONS -->
-        <section id="page-missions" class="page">
-          <div class="page-heading">
-            <div>
-              <h1>Missions & Checklist</h1>
-              <p>Keep track of your study activities.</p>
-            </div>
-          </div>
+      <section id="chat" class="page">
+        <h1>Community Chat</h1>
+        <div class="panel">
+          <p>Subject-based chat will be available after secure database and storage setup.</p>
+          <p class="muted">Chat rooms will be limited to approved students and teachers.</p>
+        </div>
+      </section>
 
-          <div class="panel">
-            <h2>Add a personal mission</h2>
-            <form id="missionForm" class="inline-form">
-              <input id="missionTitle" required placeholder="Enter your mission">
-              <button class="primary-btn" type="submit">Add Mission</button>
-            </form>
-          </div>
+      <section id="achievements" class="page">
+        <h1>Achievements</h1>
+        <div class="panel">
+          <div id="achievementList">Complete missions to work towards achievements.</div>
+        </div>
+      </section>
 
-          <div class="panel">
-            <h2>Your Missions</h2>
-            <div id="missionList" class="mission-list">
-              <p class="muted">Loading missions...</p>
-            </div>
-          </div>
-        </section>
+      <section id="rewards" class="page">
+        <h1>Rewards</h1>
+        <div class="stats-grid">
+          <div class="stat-card"><span>XP</span><strong id="rewardXP">0</strong></div>
+          <div class="stat-card"><span>Coins</span><strong id="rewardCoins">0</strong></div>
+          <div class="stat-card"><span>GB Points</span><strong id="rewardGB">0</strong></div>
+        </div>
+        <div class="panel">
+          <h2>Reward information</h2>
+          <p>Daily qualifying rewards and the 30-day reward calendar will be connected to your account database.</p>
+        </div>
+      </section>
 
-        <!-- COMPLETED -->
-        <section id="page-completed" class="page">
-          <h1>Completed & Remaining</h1>
-          <p>Review your finished and unfinished missions.</p>
-          <div class="content-grid">
-            <div class="panel">
-              <h2>Completed</h2>
-              <div id="completedList"></div>
-            </div>
-            <div class="panel">
-              <h2>Remaining</h2>
-              <div id="remainingList"></div>
-            </div>
-          </div>
-        </section>
+      <section id="settings" class="page">
+        <h1>Settings</h1>
+        <div class="panel">
+          <h2>Account</h2>
+          <p id="settingsUsername">Username</p>
+          <p id="settingsEmail">Email</p>
+        </div>
+        <div class="panel">
+          <h2>About</h2>
+          <p>Growth Bridge RPG Academy</p>
+          <p>Study consistently. Make progress every day.</p>
+        </div>
+      </section>
 
-        <!-- PROGRESS -->
-        <section id="page-progress" class="page">
-          <h1>Progress</h1>
-          <p>Review your daily and weekly study progress.</p>
-          <div class="panel">
-            <div class="auth-tabs progress-tabs">
-              <button class="active" data-progress="daily">Daily</button>
-              <button data-progress="weekly">Weekly</button>
-            </div>
-            <div id="progressDetails">
-              <h2>Daily Progress</h2>
-              <p id="progressGP">0 GP completed today.</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- COMMUNITY -->
-        <section id="page-community" class="page">
-          <h1>Community & Friends</h1>
-          <p>Connect with your approved academy community.</p>
-          <div class="panel">
-            <h2>Friends</h2>
-            <p class="muted">Your approved friends will appear here.</p>
-          </div>
-          <div class="content-grid">
-            <div class="panel">
-              <h2>Weekly Leaderboard</h2>
-              <p class="muted">Leaderboard information will appear here.</p>
-            </div>
-            <div class="panel">
-              <h2>Monthly Leaderboard</h2>
-              <p class="muted">Leaderboard information will appear here.</p>
-            </div>
-          </div>
-        </section>
-
-        <!-- TEAMMATES -->
-        <section id="page-teammates" class="page">
-          <h1>Teammates</h1>
-          <div class="panel">
-            <h2>Your Team</h2>
-            <p class="muted">Your teacher-approved team members will appear here.</p>
-          </div>
-        </section>
-
-        <!-- CHAT -->
-        <section id="page-chat" class="page">
-          <h1>Community Chat</h1>
-          <div class="panel">
-            <h2>Academy Rooms</h2>
-            <p class="muted">Approved subject discussion rooms will appear here.</p>
-            <p>Chat features will be enabled after room membership and permissions are configured.</p>
-          </div>
-        </section>
-
-        <!-- ACHIEVEMENTS -->
-        <section id="page-achievements" class="page">
-          <h1>Achievements</h1>
-          <div class="panel">
-            <h2>Your Achievements</h2>
-            <p class="muted">Your earned achievements will appear here.</p>
-          </div>
-        </section>
-
-        <!-- REWARDS -->
-        <section id="page-rewards" class="page">
-          <h1>Rewards</h1>
-          <p>Keep track of your rewards and balances.</p>
-          <div class="stats-grid">
-            <article class="stat-card"><span>XP</span><strong id="rewardXP">0</strong></article>
-            <article class="stat-card"><span>Coins</span><strong id="rewardCoins">0</strong></article>
-            <article class="stat-card"><span>GB Points</span><strong id="rewardGB">0</strong></article>
-          </div>
-          <div class="panel">
-            <h2>30-Day Reward Calendar</h2>
-            <p class="muted">Your daily reward history will appear here after reward processing is connected.</p>
-          </div>
-        </section>
-
-        <!-- SETTINGS -->
-        <section id="page-settings" class="page">
-          <h1>Settings</h1>
-          <div class="panel">
-            <h2>Account Information</h2>
-            <p id="settingsEmail"></p>
-            <p id="settingsUsername"></p>
-            <p id="settingsClass"></p>
-            <p id="settingsSchool"></p>
-          </div>
-          <div class="panel">
-            <h2>Study Schedule</h2>
-            <p class="muted">Your working-day and Sunday schedules can be managed here in a future update.</p>
-          </div>
-        </section>
-
-      </div>
     </main>
   </div>
 
-  <!-- Supabase library -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
-  <script src="script.js"></script>
 </body>
 </html>
