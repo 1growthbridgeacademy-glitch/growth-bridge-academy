@@ -1,412 +1,255 @@
-const db = window.db;
-
-let currentUser = null;
-let currentProfile = null;
-let currentAuthMode = "login";
-let missions = [];
-
 const $ = (id) => document.getElementById(id);
 
-// AUTH MODE
+let currentUser = null;
+let missions = JSON.parse(localStorage.getItem("gb_missions") || "[]");
+let rewards = JSON.parse(localStorage.getItem("gb_rewards") || '{"xp":0,"coins":0,"gb":0}');
+let todayGP = 0;
 
-function setAuthMode(mode) {
-  currentAuthMode = mode;
+const DAILY_TARGET = 100;
 
-  $("loginTab").classList.toggle("active", mode === "login");
-  $("registerTab").classList.toggle("active", mode === "register");
-  $("registerFields").classList.toggle("hidden", mode !== "register");
-
-  $("authSubmit").textContent =
-    mode === "login" ? "Login" : "Create Account";
-
-  $("authMessage").textContent = "";
+function saveData() {
+  localStorage.setItem("gb_missions", JSON.stringify(missions));
+  localStorage.setItem("gb_rewards", JSON.stringify(rewards));
 }
 
-$("loginTab").addEventListener("click", () => setAuthMode("login"));
-$("registerTab").addEventListener("click", () => setAuthMode("register"));
+function showMessage(message) {
+  $("authMessage").textContent = message;
+}
 
-// REGISTRATION AND LOGIN
+function showPage(pageId) {
+  document.querySelectorAll(".page").forEach(page => {
+    page.classList.remove("active-page");
+  });
 
-$("authForm").addEventListener("submit", async (event) => {
+  const selected = $(pageId);
+  if (selected) selected.classList.add("active-page");
+
+  document.querySelectorAll(".nav-link[data-page]").forEach(button => {
+    button.classList.toggle("active", button.dataset.page === pageId);
+  });
+
+  closeDrawer();
+}
+
+function openDrawer() {
+  $("sidebar").classList.add("open");
+  $("drawerOverlay").classList.add("show");
+}
+
+function closeDrawer() {
+  $("sidebar").classList.remove("open");
+  $("drawerOverlay").classList.remove("show");
+}
+
+function renderMissions() {
+  const missionList = $("missionList");
+  const lobbyList = $("lobbyMissions");
+  const completedList = $("completedList");
+  const remainingList = $("remainingList");
+
+  missionList.innerHTML = "";
+  lobbyList.innerHTML = "";
+  completedList.innerHTML = "";
+  remainingList.innerHTML = "";
+
+  missions.forEach((mission, index) => {
+    const item = document.createElement("div");
+    item.className = "mission-item" + (mission.completed ? " completed" : "");
+
+    const title = document.createElement("span");
+    title.textContent = `${mission.title} (${mission.gp} GP)`;
+
+    const button = document.createElement("button");
+    button.textContent = mission.completed ? "Completed" : "Done";
+    button.disabled = mission.completed;
+    button.addEventListener("click", () => completeMission(index));
+
+    item.append(title, button);
+    missionList.appendChild(item);
+
+    const copy = document.createElement("p");
+    copy.textContent = `${mission.title} — ${mission.gp} GP`;
+    lobbyList.appendChild(copy);
+
+    const listCopy = document.createElement("p");
+    listCopy.textContent = mission.title;
+
+    if (mission.completed) {
+      completedList.appendChild(listCopy);
+    } else {
+      remainingList.appendChild(listCopy);
+    }
+  });
+
+  updateDashboard();
+}
+
+function completeMission(index) {
+  const mission = missions[index];
+  if (!mission || mission.completed) return;
+
+  mission.completed = true;
+  todayGP += mission.gp;
+
+  if (todayGP >= DAILY_TARGET && !mission.dailyRewardGiven) {
+    rewards.xp += 10;
+    rewards.coins += 20;
+    mission.dailyRewardGiven = true;
+  }
+
+  saveData();
+  renderMissions();
+}
+
+function updateDashboard() {
+  $("todayGP").textContent = todayGP;
+  $("totalXP").textContent = rewards.xp;
+  $("totalCoins").textContent = rewards.coins;
+  $("totalGB").textContent = rewards.gb;
+
+  $("rewardXP").textContent = rewards.xp;
+  $("rewardCoins").textContent = rewards.coins;
+  $("rewardGB").textContent = rewards.gb;
+
+  $("dailyProgressText").textContent = `${todayGP} of ${DAILY_TARGET} GP earned`;
+  $("dailyProgressBar").style.width =
+    `${Math.min(100, (todayGP / DAILY_TARGET) * 100)}%`;
+
+  $("weeklyProgressText").textContent =
+    `${missions.filter(m => m.completed).length} missions completed in this browser session.`;
+
+  $("achievementList").textContent =
+    missions.some(m => m.completed)
+      ? "First Steps: You have completed a mission!"
+      : "Complete your first mission to begin earning achievements.";
+}
+
+$("menuButton").addEventListener("click", openDrawer);
+$("drawerOverlay").addEventListener("click", closeDrawer);
+
+document.querySelectorAll(".nav-link[data-page]").forEach(button => {
+  button.addEventListener("click", () => showPage(button.dataset.page));
+});
+
+$("missionForm").addEventListener("submit", event => {
   event.preventDefault();
 
-  if (!db) {
-    $("authMessage").textContent = "Supabase is not configured.";
+  const title = $("missionTitle").value.trim();
+  const gp = Number($("missionGP").value);
+
+  if (!title || !Number.isFinite(gp) || gp < 0) return;
+
+  missions.push({
+    title,
+    gp,
+    completed: false
+  });
+
+  $("missionTitle").value = "";
+  saveData();
+  renderMissions();
+});
+
+$("showRegister").addEventListener("click", () => {
+  $("loginForm").classList.add("hidden");
+  $("registerForm").classList.remove("hidden");
+});
+
+$("backToLogin").addEventListener("click", () => {
+  $("registerForm").classList.add("hidden");
+  $("loginForm").classList.remove("hidden");
+});
+
+$("registerForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  if (!window.db) {
+    showMessage("Supabase is not configured yet. Add your project URL and publishable key.");
     return;
   }
 
-  const email = $("email").value.trim();
-  const password = $("password").value;
+  const email = $("regEmail").value.trim();
+  const password = $("regPassword").value;
+  const username = $("username").value.trim();
 
-  $("authSubmit").disabled = true;
-  $("authMessage").textContent = "Please wait...";
-
-  try {
-    if (currentAuthMode === "register") {
-      const username = $("username").value.trim();
-
-      if (!username) {
-        throw new Error("Please enter a username.");
+  const { error } = await window.db.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        username,
+        school: $("school").value.trim(),
+        class_name: $("className").value.trim(),
+        syllabus: $("syllabus").value.trim(),
+        subjects: $("subjects").value.trim()
       }
-
-      const { data, error } = await db.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username,
-            class_name: $("className").value.trim(),
-            school_name: $("schoolName").value.trim(),
-            syllabus: $("syllabus").value.trim(),
-            subjects: $("subjects").value.trim(),
-            gender: $("gender").value
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      if (data.session) {
-        await loadApplication(data.user);
-      } else {
-        $("authMessage").textContent =
-          "Registration successful. Check your email to confirm your account, then log in.";
-      }
-
-    } else {
-      const { data, error } = await db.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) throw error;
-
-      await loadApplication(data.user);
     }
+  });
 
-  } catch (error) {
-    $("authMessage").textContent = error.message;
-  } finally {
-    $("authSubmit").disabled = false;
+  if (error) {
+    showMessage(error.message);
+  } else {
+    showMessage("Account created. Check your email if confirmation is enabled.");
   }
 });
 
-// LOAD APPLICATION
+$("loginForm").addEventListener("submit", async event => {
+  event.preventDefault();
 
-async function loadApplication(user) {
-  currentUser = user;
-
-  const { data: profile, error } = await db
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error(error);
-  }
-
-  currentProfile = profile || {
-    username: user.user_metadata?.username || user.email.split("@")[0],
-    class_name: user.user_metadata?.class_name || "",
-    school_name: user.user_metadata?.school_name || ""
-  };
-
-  $("authScreen").classList.add("hidden");
-  $("app").classList.remove("hidden");
-
-  const username = currentProfile.username || "Student";
-
-  $("welcomeName").textContent = username;
-  $("sidebarUsername").textContent = username;
-  $("topUsername").textContent = username;
-  $("userInitial").textContent = username.charAt(0).toUpperCase();
-
-  $("settingsEmail").textContent = "Email: " + user.email;
-  $("settingsUsername").textContent = "Username: " + username;
-  $("settingsClass").textContent =
-    "Class: " + (currentProfile.class_name || "Not added");
-  $("settingsSchool").textContent =
-    "School: " + (currentProfile.school_name || "Not added");
-
-  await loadMissions();
-  await loadBalances();
-}
-
-// LOGOUT
-
-$("logoutButton").addEventListener("click", async () => {
-  if (!db) return;
-
-  const { error } = await db.auth.signOut();
-
-  if (error) {
-    alert(error.message);
+  if (!window.db) {
+    showMessage("Supabase is not configured yet. Add your project URL and publishable key.");
     return;
   }
 
-  currentUser = null;
-  currentProfile = null;
-  missions = [];
+  const { data, error } = await window.db.auth.signInWithPassword({
+    email: $("email").value.trim(),
+    password: $("password").value
+  });
 
+  if (error) {
+    showMessage(error.message);
+  } else {
+    currentUser = data.user;
+    enterApp();
+  }
+});
+
+async function enterApp() {
+  $("authScreen").classList.add("hidden");
+  $("app").classList.remove("hidden");
+
+  const displayName =
+    currentUser?.user_metadata?.username ||
+    currentUser?.email ||
+    "Student";
+
+  $("userDisplay").textContent = displayName;
+  $("settingsUsername").textContent = displayName;
+  $("settingsEmail").textContent = currentUser?.email || "";
+
+  renderMissions();
+}
+
+$("logoutButton").addEventListener("click", async () => {
+  if (window.db) {
+    await window.db.auth.signOut();
+  }
+
+  currentUser = null;
   $("app").classList.add("hidden");
   $("authScreen").classList.remove("hidden");
 });
 
-// NAVIGATION
+async function checkExistingSession() {
+  if (!window.db) return;
 
-function showPage(pageName) {
-  document.querySelectorAll(".page").forEach(page => {
-    page.classList.remove("active");
-  });
+  const { data } = await window.db.auth.getSession();
 
-  document.querySelectorAll(".nav-item").forEach(item => {
-    item.classList.toggle(
-      "active",
-      item.dataset.page === pageName
-    );
-  });
-
-  const page = $("page-" + pageName);
-
-  if (page) {
-    page.classList.add("active");
-  }
-
-  const activeButton = document.querySelector(
-    `.nav-item[data-page="${pageName}"]`
-  );
-
-  $("topTitle").textContent = activeButton
-    ? activeButton.textContent.trim()
-    : "Lobby";
-
-  closeMenu();
-
-  if (pageName === "completed") renderCompleted();
-  if (pageName === "progress") updateProgress();
-}
-
-document.querySelectorAll(".nav-item").forEach(button => {
-  button.addEventListener("click", () => {
-    showPage(button.dataset.page);
-  });
-});
-
-document.querySelectorAll("[data-go]").forEach(button => {
-  button.addEventListener("click", () => {
-    showPage(button.dataset.go);
-  });
-});
-
-// MOBILE MENU
-
-function openMenu() {
-  $("sidebar").classList.add("open");
-  $("overlay").classList.add("show");
-}
-
-function closeMenu() {
-  $("sidebar").classList.remove("open");
-  $("overlay").classList.remove("show");
-}
-
-$("menuButton").addEventListener("click", () => {
-  $("sidebar").classList.contains("open") ? closeMenu() : openMenu();
-});
-
-$("overlay").addEventListener("click", closeMenu);
-
-// MISSIONS
-
-async function loadMissions() {
-  if (!currentUser) return;
-
-  const { data, error } = await db
-    .from("missions")
-    .select("*")
-    .eq("student_id", currentUser.id)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error(error);
-    $("missionList").innerHTML =
-      "<p class='muted'>Could not load missions.</p>";
-    return;
-  }
-
-  missions = data || [];
-  renderMissions();
-}
-
-function renderMissions() {
-  const list = $("missionList");
-
-  if (!missions.length) {
-    list.innerHTML = "<p class='muted'>No missions added yet.</p>";
-    return;
-  }
-
-  list.innerHTML = missions.map(mission => `
-    <div class="mission-item ${mission.completed ? "done" : ""}">
-      <span>${escapeHTML(mission.title)}</span>
-      ${
-        mission.completed
-          ? "<small>Completed</small>"
-          : `<button data-complete="${mission.id}">Mark Done</button>`
-      }
-    </div>
-  `).join("");
-
-  list.querySelectorAll("[data-complete]").forEach(button => {
-    button.addEventListener("click", () => {
-      completeMission(button.dataset.complete);
-    });
-  });
-}
-
-$("missionForm").addEventListener("submit", async (event) => {
-  event.preventDefault();
-
-  const title = $("missionTitle").value.trim();
-
-  if (!title || !currentUser) return;
-
-  const { error } = await db.from("missions").insert({
-    student_id: currentUser.id,
-    title,
-    completed: false
-  });
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  $("missionTitle").value = "";
-  await loadMissions();
-});
-
-async function completeMission(id) {
-  const { error } = await db
-    .from("missions")
-    .update({ completed: true })
-    .eq("id", id)
-    .eq("student_id", currentUser.id);
-
-  if (error) {
-    alert(error.message);
-    return;
-  }
-
-  await loadMissions();
-}
-
-function renderCompleted() {
-  const completed = missions.filter(item => item.completed);
-  const remaining = missions.filter(item => !item.completed);
-
-  $("completedList").innerHTML = completed.length
-    ? completed.map(item => `<p>✓ ${escapeHTML(item.title)}</p>`).join("")
-    : "<p class='muted'>Nothing completed yet.</p>";
-
-  $("remainingList").innerHTML = remaining.length
-    ? remaining.map(item => `<p>○ ${escapeHTML(item.title)}</p>`).join("")
-    : "<p class='muted'>No remaining missions.</p>";
-}
-
-// PROGRESS
-
-function updateProgress() {
-  $("progressGP").textContent =
-    "You have " + missions.filter(m => m.completed).length +
-    " completed missions.";
-}
-
-document.querySelectorAll("[data-progress]").forEach(button => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll("[data-progress]").forEach(item => {
-      item.classList.remove("active");
-    });
-
-    button.classList.add("active");
-
-    $("progressDetails").innerHTML =
-      button.dataset.progress === "daily"
-        ? "<h2>Daily Progress</h2><p>Review today's study activities.</p>"
-        : "<h2>Weekly Progress</h2><p>Review your weekly study activities.</p>";
-
-    updateProgress();
-  });
-});
-
-// BALANCES
-
-async function loadBalances() {
-  if (!currentUser) return;
-
-  const { data, error } = await db
-    .from("reward_balances")
-    .select("*")
-    .eq("student_id", currentUser.id)
-    .maybeSingle();
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  const balance = data || {
-    gp: 0,
-    xp: 0,
-    coins: 0,
-    gb_points: 0
-  };
-
-  $("gpValue").textContent = balance.gp;
-  $("xpValue").textContent = balance.xp;
-  $("coinValue").textContent = balance.coins;
-  $("gbValue").textContent = balance.gb_points;
-
-  $("rewardXP").textContent = balance.xp;
-  $("rewardCoins").textContent = balance.coins;
-  $("rewardGB").textContent = balance.gb_points;
-
-  const target = 100;
-  const percentage = Math.min(100, (balance.gp / target) * 100);
-
-  $("dailyProgressBar").style.width = percentage + "%";
-  $("dailyProgressText").textContent =
-    balance.gp + " / " + target + " GP completed";
-}
-
-// BASIC HTML SAFETY
-
-function escapeHTML(value) {
-  return String(value).replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
-  })[char]);
-}
-
-// CHECK EXISTING LOGIN SESSION
-
-async function startApplication() {
-  if (!db) return;
-
-  const { data, error } = await db.auth.getSession();
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  if (data.session?.user) {
-    await loadApplication(data.session.user);
+  if (data.session) {
+    currentUser = data.session.user;
+    enterApp();
   }
 }
 
-startApplication();
+checkExistingSession();
+renderMissions();
